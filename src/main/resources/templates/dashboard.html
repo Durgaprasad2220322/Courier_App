@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Courier Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f9f9f9; }
+        .navbar { 
+            background: #333; color: white; padding: 15px 20px; 
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 8px 8px 0 0; margin-bottom: 0;
+        }
+        .stats-container { display: flex; gap: 20px; margin-bottom: 30px; margin-top: 20px; }
+        .card { 
+            background: white; padding: 20px; border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; text-align: center; 
+         }
+         .card h3 { margin: 0; color: #555; font-size: 14px; text-transform: uppercase; }
+         .card p { margin: 10px 0 0; font-size: 24px; font-weight: bold; color: #007bff; }
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #007bff; color: white; }
+        .status-delivered { color: green; font-weight: bold; }
+        .status-pending { color: orange; font-weight: bold; }
+        .status-picked { color: #007bff; font-weight: bold; }
+        .btn-delete { color: #dc3545; text-decoration: none; font-weight: bold; border: 1px solid #dc3545; padding: 5px 10px; border-radius: 4px; }
+        .btn-delete:hover { background: #dc3545; color: white; }
+        .btn-action { text-decoration: none; font-weight: bold; padding: 6px 12px; border-radius: 4px; display: inline-block; }
+        .btn-accept { background-color: #28a745; color: white; }
+        .btn-deliver { background-color: #007bff; color: white; }
+        .btn-add { background-color: #007bff; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; }
+        .btn-track { color: #007bff; text-decoration: none; font-weight: bold; margin-right: 15px; }
+        .offline-warning { background: #fff3cd; color: #856404; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; border: 1px solid #ffeeba; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div><strong>Courier Portal</strong></div>
+        <div th:if="${session.loggedInUser}">
+            <span>Welcome, <b th:text="${session.loggedInUser.name}">User</b>!</span>
+            <a th:href="@{/api/users/logout}" style="color: #ff4d4d; margin-left: 20px; text-decoration: none; font-weight: bold;">Logout</a>
+        </div>
+    </div>
+
+    <div th:if="${session.loggedInUser.role == 'DRIVER'}" style="margin: 20px 0; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <span th:text="${session.loggedInUser.online ? '🟢 You are currently ONLINE' : '🔴 You are currently OFFLINE'}" 
+              th:style="${session.loggedInUser.online ? 'color: green; font-weight: bold;' : 'color: red; font-weight: bold;'}">
+        </span>
+        <a th:href="@{/api/users/toggle-status}" 
+           th:class="${session.loggedInUser.online ? 'btn-delete' : 'btn-add'}" 
+           style="margin-left: 15px; padding: 8px 15px; text-decoration: none; font-size: 14px;">
+           <span th:text="${session.loggedInUser.online ? 'Go Offline' : 'Go Online'}"></span>
+        </a>
+    </div>
+
+    <h2>Live Delivery Dashboard</h2>
+    
+    <div class="stats-container">
+        <div class="card">
+            <h3>Total Deliveries</h3>
+            <p th:text="${totalCount}">0</p>
+        </div>
+        <div class="card">
+            <h3>Pending</h3>
+            <p style="color: orange;" th:text="${pendingCount}">0</p>
+        </div>
+        <div class="card">
+            <h3>Completed</h3>
+            <p style="color: green;" th:text="${deliveredCount}">0</p>
+        </div>
+        <div class="card" th:if="${session.loggedInUser.role == 'DRIVER'}">
+            <h3>My Total Earnings</h3>
+            <p style="color: #28a745;">₹<span th:text="${totalEarnings}">0</span></p>
+        </div>
+    </div>
+
+    <form th:action="@{/api/deliveries/dashboard}" method="get" style="margin-bottom: 20px;">
+        <input type="text" name="search" placeholder="Search addresses or email..." style="padding: 8px; width: 250px; border: 1px solid #ddd; border-radius: 4px;">
+        <button type="submit" style="padding: 8px 15px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px;">Search</button>
+        <a th:href="@{/api/deliveries/dashboard}" style="margin-left: 10px; text-decoration: none; color: #666;">Clear</a>
+    </form>
+
+    <div th:if="${session.loggedInUser.role == 'DRIVER' && not #lists.isEmpty(myTasks)}">
+        <h3>📋 My Active Tasks (In Progress)</h3>
+        <table style="border: 2px solid #007bff;">
+            <thead style="background-color: #002D62;">
+                <tr>
+                    <th>ID</th>
+                    <th>Receiver</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="task : ${myTasks}">
+                    <td th:text="${task.id}"></td>
+                    <td th:text="${task.receiverName}"></td>
+                    <td th:text="'₹' + (${task.weight > 10 ? 150 : 50})"></td>
+                    <td class="status-picked">PICKED UP</td>
+                    <td>
+                        <a th:href="@{/api/deliveries/status/{id}/DELIVERED(id=${task.id})}" 
+                           class="btn-action btn-deliver">📦 Complete Delivery</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div th:if="${session.loggedInUser.role == 'DRIVER' && !session.loggedInUser.online}" class="offline-warning">
+        <p>⚠️ You are currently <strong>Offline</strong>. You cannot see new delivery requests until you go Online.</p>
+    </div>
+
+    <div th:if="${session.loggedInUser.role != 'DRIVER' || session.loggedInUser.online}">
+        <h3>Available Deliveries</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Pickup From</th>
+                    <th>Deliver To</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                    <th>Order Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="d : ${deliveries}">
+                    <td th:text="${d.id}"></td>
+                    <td th:text="${d.pickupAddress}"></td>
+                    <td th:text="${d.deliveryAddress}"></td>
+                    <td th:text="${d.status}" 
+                        th:class="${d.status == 'DELIVERED' ? 'status-delivered' : (d.status == 'PICKED_UP' ? 'status-picked' : 'status-pending')}">
+                        PENDING
+                    </td>
+                    
+                    <td>
+                        <div th:if="${session.loggedInUser.role == 'DRIVER'}">
+                            <div th:if="${d.status == 'PENDING'}">
+                                <a th:href="@{/api/deliveries/accept/{id}(id=${d.id})}" 
+                                   class="btn-action btn-accept">✅ Accept</a>
+        
+                                <a th:href="@{/api/deliveries/dashboard(rejectedId=${d.id})}" 
+                                   class="btn-action" 
+                                   style="background-color: #6c757d; color: white; margin-left: 5px;"
+                                   onclick="return confirm('Are you sure you want to decline this request?')">❌ Reject</a>
+                            </div>
+    
+                            <span th:if="${d.status == 'PICKED_UP'}">In My Tasks</span>
+                            <span th:if="${d.status == 'DELIVERED'}">Completed</span>
+                         </div>
+
+                        <div th:if="${session.loggedInUser.role != 'DRIVER'}">
+                            <a th:href="@{/api/deliveries/track/{id}(id=${d.id})}" class="btn-track">🔍 Track</a>
+                            
+                            <a th:if="${d.driver != null}" 
+                               th:href="'https://wa.me/' + ${d.driver.phone} + '?text=Hi, I am the sender of Order #' + ${d.id}" 
+                               target="_blank" 
+                               style="color: #25D366; text-decoration: none; font-weight: bold; margin-right: 15px;">
+                               💬 Chat with Driver
+                            </a>
+
+                            <a th:if="${d.driver == null}" 
+                               href="https://wa.me/919515457731?text=Hi Admin, my order hasn't been picked up yet." 
+                               target="_blank" 
+                               style="color: #25D366; text-decoration: none; font-weight: bold; margin-right: 15px;">
+                               💬 Chat with Support
+                            </a>
+                            
+                            <a th:if="${d.status != 'DELIVERED' && session.loggedInUser.role == 'ADMIN'}" 
+                               th:href="@{/api/deliveries/status/{id}/DELIVERED(id=${d.id})}"
+                               style="color: green; font-weight: bold; text-decoration: none; margin-right: 10px;">
+                               ✅ Mark Delivered
+                            </a>
+                            
+                            <span th:if="${d.status == 'DELIVERED'}">Completed</span>
+                            
+                            <a th:if="${session.loggedInUser.role == 'ADMIN'}" 
+                               th:href="@{/api/deliveries/delete/{id}(id=${d.id})}" 
+                               class="btn-delete"
+                               onclick="return confirm('Delete this record?')">Delete</a>
+                        </div>
+                    </td>
+                    
+                    <td th:text="${#temporals.format(d.orderDate, 'dd-MM-yyyy HH:mm')}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div th:if="${session.loggedInUser.role != 'DRIVER'}" style="margin-top: 20px;">
+        <a th:href="@{/api/deliveries/create}" class="btn-add">+ Add New Delivery</a>
+    </div>
+
+</body>
+</html>
