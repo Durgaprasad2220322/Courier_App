@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Confirm Booking</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f4f4; }
+        /* Mock Map Background */
+        .map-bg {
+            height: 60vh;
+            background: url('https://maps.googleapis.com/maps/api/staticmap?center=Visakhapatnam&zoom=14&size=600x400&key=YOUR_KEY') no-repeat center;
+            background-size: cover;
+        }
+        /* Bottom Sheet UI */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            border-top-left-radius: 25px;
+            border-top-right-radius: 25px;
+            padding: 20px;
+            box-shadow: 0 -10px 20px rgba(0,0,0,0.1);
+            z-index:100;
+            box-sizing: border-box;
+        }
+        .option-card {
+            border: 2px solid #002D62; border-radius: 10px; padding: 15px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+        }
+        .price { font-weight: bold; font-size: 1.2em; }
+        .btn-confirm {
+            background: #FFC107; color: black; border: none; width: 100%;
+            padding: 15px; border-radius: 30px; font-weight: bold; font-size: 1.1em; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="map-container" style="position: relative; height: 55vh; width: 100%; overflow: hidden; background: #e5e3df;">
+    
+    <img th:src="@{/images/map_bg.jpg}" 
+         style="width: 100%; height: 100%; object-fit: cover;" 
+         alt="Delivery Map">
+
+    <div style="position: absolute; top: 20px; left: 5%; width: 90%; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10;">
+        <p>🔴 <span th:text="${delivery.pickupAddress}">Tuni</span></p>
+        <p>🟢 <span th:text="${delivery.deliveryAddress}">Annavaram</span></p>
+    </div>
+</div>
+<div style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px;">
+    <p style="font-size: 0.9em; color: #555;">
+        👤 <strong>Receiver:</strong> <span th:text="${delivery.receiverName}">Name</span> 
+        (<span th:text="${delivery.receiverPhone}">Phone</span>)
+    </p>
+</div>
+    <div class="bottom-sheet">
+        <div class="option-card">
+            <div>
+                <img src="/images/parcel-icon.png" style="width:40px; float:left; margin-right:10px;">
+                <strong>Parcel</strong><br>
+                <span style="color: gray; font-size: 0.8em;">Standard Delivery</span>
+            </div>
+            <div class="price" th:text="'₹' + ${calculatedPrice}">₹50</div>
+        </div>
+
+        <div class="address-check">
+            <p>🚩 <span th:text="${delivery.pickupAddress}">Pickup</span></p>
+            <p>📍 <span th:text="${delivery.deliveryAddress}">Drop</span></p>
+        </div>
+        <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                <span>💵 Cash ></span>
+                <span>% Offers ></span>
+        </div>
+        
+        
+        
+        
+        
+        <div th:if="${delivery.driver != null}" style="display: flex; align-items: center; padding: 15px; background: #f9f9f9; border-radius: 10px; margin-bottom: 15px;">
+    
+    <div style="background: #002D62; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold;">
+        <span th:text="${#strings.substring(delivery.driver.name,0,1)}">D</span>
+    </div>
+
+    <div style="flex-grow: 1;">
+        <strong style="display: block; color: #333;" th:text="${delivery.driver.name}">Driver Name</strong>
+        <span style="color: #ff9800; font-size: 0.85em; font-weight: bold;">
+            Arriving in: <span id="countdown">05:00</span>
+        </span>
+    </div>
+
+    <a th:href="'tel:' + ${delivery.driver.phone}" style="text-decoration: none; background: #e8f5e9; padding: 10px; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 1.2em;">📞</span>
+    </a>
+</div>
+        
+        <form th:action="@{/api/deliveries/dashboard}" method="get">
+            <button class="btn-confirm">Book Parcel</button>
+        </form>
+    
+    </div>
+    
+    <script>
+    let time = 300; // 5 minutes in seconds
+    const countdownEl = document.getElementById('countdown');
+
+    if (countdownEl) {
+        setInterval(updateCountdown, 1000);
+    }
+
+    function updateCountdown() {
+        const minutes = Math.floor(time / 60);
+        let seconds = time % 60;
+        seconds = seconds < 10 ? '0' + seconds : seconds;
+        
+        countdownEl.innerHTML = `${minutes}:${seconds}`;
+        if (time > 0) {
+            time--;
+        } else {
+            countdownEl.innerHTML = "Arrived!";
+        }
+    }
+</script>
+</body>
+</html>
+
