@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Delivery Details</title>
+    <style>
+        body { font-family: Arial; margin: 50px; background: #f4f7f6; }
+        .detail-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .label { font-weight: bold; color: #555; }
+        .status-badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="detail-card">
+        <h2>Delivery #<span th:text="${delivery.id}"></span></h2>
+        <div class="row"><span class="label">Pickup:</span> <span th:text="${delivery.pickupAddress}"></span></div>
+        <div class="row"><span class="label">Delivery:</span> <span th:text="${delivery.deliveryAddress}"></span></div>
+        <div class="row">
+            <span class="label">Status:</span> 
+            <span th:text="${delivery.status}" class="status-badge" 
+                  th:style="${delivery.status == 'DELIVERED' ? 'background:#d4edda; color:#155724;' : 'background:#fff3cd; color:#856404;'}">
+            </span>
+        </div>
+        <div class="row"><span class="label">Order Date:</span> <span th:text="${#temporals.format(delivery.orderDate, 'dd MMM yyyy HH:mm')}"></span></div>
+        <br>
+        <a href="/api/deliveries/dashboard" style="text-decoration:none; color:#007bff;">← Back to Dashboard</a>
+    </div>
+</body>
+</html>
