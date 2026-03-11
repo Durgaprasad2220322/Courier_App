@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Track Your Delivery</title>
+    <style>
+        .track-container { width: 80%; margin: 50px auto; font-family: Arial; }
+        .progress-bg { background: #e0e0e0; border-radius: 10px; height: 20px; width: 100%; position: relative; }
+        .progress-fill { 
+            background: #28a745; height: 100%; border-radius: 10px; 
+            transition: width 0.5s ease-in-out; 
+            width: 0%; /* Will be set by Thymeleaf */
+        }
+        .steps { display: flex; justify-content: space-between; margin-top: 10px; color: #666; font-size: 14px; }
+        .active-step { color: #28a745; font-weight: bold; }
+        .details-card { background: white; padding: 20px; margin-top: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="track-container">
+        <h2>Order Tracking: #<span th:text="${delivery.id}"></span></h2>
+        
+        <div class="progress-bg">
+            <div class="progress-fill" th:style="'width: ' + ${progress} + '%;'"></div>
+        </div>
+        
+        <div class="steps">
+            <div th:class="${progress >= 33 ? 'active-step' : ''}">✔ Booked</div>
+            <div th:class="${progress >= 66 ? 'active-step' : ''}">🚚 Out for Delivery</div>
+            <div th:class="${progress == 100 ? 'active-step' : ''}">🏁 Delivered</div>
+        </div>
+
+        <div class="details-card">
+            <p><strong>Pickup:</strong> <span th:text="${delivery.pickupAddress}"></span></p>
+            <p><strong>Destination:</strong> <span th:text="${delivery.deliveryAddress}"></span></p>
+            <p><strong>Current Status:</strong> <span th:text="${delivery.status}" style="color: blue;"></span></p>
+        </div>
+        
+        <br>
+        <a href="/api/deliveries/dashboard" style="text-decoration: none; color: #007bff;">← Back to Dashboard</a>
+    </div>
+</body>
+</html>
